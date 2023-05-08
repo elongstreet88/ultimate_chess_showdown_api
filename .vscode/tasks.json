@@ -1,0 +1,60 @@
+{
+  "version": "2.0.0",
+  "inputs": [
+  ],
+  "tasks": [
+    {
+      "type": "docker-run",
+      "label": "docker-run: debug",
+      "dependsOn": ["docker-build"],
+      "dockerRun": {
+        "network": "ucs",
+        "containerName": "ucs",
+        "image": "ucs:latest",
+        "env": {
+            "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "volumes": [
+          {
+            "containerPath": "/app",
+            "localPath": "${workspaceFolder}"
+          }
+        ],
+        "ports": [
+          {
+            "containerPort": 8000,
+            "hostPort": 8000
+          }
+        ]
+      },
+      "python": {
+        "args": [
+            "app:app",
+            "--host", 
+            "0.0.0.0",
+            "--reload",
+            "--log-level",
+            "debug",
+            "--port",
+            "8000"
+        ],
+        "module": "uvicorn"
+      }
+    },
+    {
+      "label": "docker-build",
+      "type": "docker-build",
+      "dockerBuild": {
+        "target": "build",
+        "context": "${workspaceFolder}/../",
+        "dockerfile": "${workspaceFolder}/../Dockerfile",
+        "tag": "ucs:latest"
+      }
+    },
+    {
+      "label": "start_redis",
+      "type": "shell",
+      "command": "./redis/run.sh"
+    }
+  ]
+}
