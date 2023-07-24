@@ -7,7 +7,6 @@ import chess
 import uuid
 import aioredis
 import json
-from starlette.websockets import WebSocketDisconnect
 
 # Router
 router = APIRouter(
@@ -24,11 +23,9 @@ class ActionType(str, Enum):
     ACCEPT_DRAW = "ACCEPT_DRAW"
     RESIGN = "RESIGN"
 
-
 class ChessAction(BaseModel):
     action_type: ActionType
     move: Optional[str]
-
 
 class Game:
     def __init__(self):
@@ -57,17 +54,15 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
         game = await get_game(redis, game_id)
         if game is not None:
             await websocket.send_text(game.board.fen())
-        await asyncio.sleep(1)
+        #await asyncio.sleep(1)
 
 async def get_redis():
     redis = aioredis.from_url("redis://localhost")
     return redis
 
-
 async def set_game(redis, game_id, game):
     key = f"game:{game_id}"
     await redis.set(key, json.dumps({"fen": game.board.fen()}))
-
 
 async def get_game(redis, game_id):
     key = f"game:{game_id}"
@@ -79,11 +74,9 @@ async def get_game(redis, game_id):
     game.board.set_fen(game_data["fen"])
     return game
 
-
 async def delete_game(redis, game_id):
     key = f"game:{game_id}"
     await redis.delete(key)
-
 
 @router.post("/start_game")
 async def start_game():
@@ -93,7 +86,6 @@ async def start_game():
     await set_game(redis, game_id, game)
     await redis.close()
     return {"game_id": game_id}
-
 
 @router.post("/{game_id}/action")
 async def game_action(game_id: str, action: ChessAction):
@@ -141,7 +133,6 @@ async def game_action(game_id: str, action: ChessAction):
     await redis.close()
 
     return {"board": str(game.board), "fen": game.board.fen(), "evaluation": score}
-
 
 @router.get("/{game_id}")
 async def get_game_position(game_id: str):
