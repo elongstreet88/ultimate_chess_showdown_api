@@ -1,17 +1,11 @@
-import logging
+from fastapi.responses import FileResponse
 import uvicorn
 from fastapi import FastAPI
 from apis.api_docs.router import APIDocs
 from apis.api_health.router import router as router_health
 from apis.game.router import router as router_game
 from fastapi.middleware.gzip import GZipMiddleware
-from tools.logs.logs import LOGGING_CONFIG
-from tools.logs.logs import get_logger
 from fastapi.middleware.cors import CORSMiddleware
-
-# Create logger
-#logging.config.dictConfig(LOGGING_CONFIG)
-#logger = get_logger(__name__)
 
 # Fast API
 app = FastAPI(
@@ -46,6 +40,12 @@ for router in routers:
         router=router
     )
 
+# Add default route
+@app.get("/")
+async def root():
+    # serve static index.html
+    return FileResponse('www/index.html')
+
 @app.on_event("startup")
 async def startup():
     ...
@@ -61,4 +61,4 @@ if __name__ == "__main__":
         )
         
     except Exception as e:
-        logger.error(f"Failed to start the application: {e}")
+        print(f"Failed to start the application: {e}")

@@ -1,18 +1,23 @@
 import asyncio
-from fastapi import APIRouter, HTTPException, WebSocket
+from fastapi import APIRouter, HTTPException, Response, WebSocket
 from pydantic import BaseModel
 from typing import Optional
 from enum import Enum
 import chess
 import uuid
-import aioredis
+from redis import asyncio as aioredis
 import json
+from starlette.responses import StreamingResponse
+from tools.config.app_settings import app_settings
 
 # Router
 router = APIRouter(
     prefix="/game",
     tags=["Game"]
 )
+
+# Redis Connection Pool from url
+redis_pool = aioredis.from_url(app_settings.redis_url)
 
 # Websocket connections
 connected_clients = set()
@@ -46,19 +51,30 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.send_text(game.board.fen())
         await asyncio.sleep(0)
 
+@router.get("/sse/{game_id}")
+async def sse_endpoint(game_id: str):
+    async def async_stream_game_state():
+        redis = await get_redis()
+        while True:
+            game = await get_game(redis, game_id)
+            if game is not None:
+                yield f"data: {game.board.fen()}\n\n"
+            await asyncio.sleep(1)  # Add this line if you want to send updates at intervals
+
+    return StreamingResponse(async_stream_game_state(), media_type="text/event-stream")
+
 @router.websocket("/ws/{game_id}")
 async def websocket_endpoint(websocket: WebSocket, game_id: str):
     await websocket.accept()
     redis = await get_redis()
     while True:
-        game = await get_game(redis, game_id)
+        game = await get_game(redis, game_id)   
         if game is not None:
             await websocket.send_text(game.board.fen())
         #await asyncio.sleep(1)
 
 async def get_redis():
-    redis = aioredis.from_url("redis://localhost")
-    return redis
+    return redis_pool
 
 async def set_game(redis, game_id, game):
     key = f"game:{game_id}"
