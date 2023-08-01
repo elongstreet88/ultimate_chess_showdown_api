@@ -1,6 +1,5 @@
 import logging
 import os
-import uuid
 from jsonargparse import ArgumentParser, Namespace
 from tools.logs.logs import get_logger
 
@@ -23,8 +22,8 @@ class AppSettings():
             help='Redis URL'
         )
 
-        # Parse arguments
-        self.config:Namespace = parser.parse_args()
+        # Parse arguments (note - we skip actual command line arguments)
+        self.config:Namespace = parser.parse_args([])
 
         # Add properties to class to easily access config values
         self.redis_url      = self.config.redis_url

@@ -1,11 +1,12 @@
-from fastapi.responses import FileResponse
+
 import uvicorn
 from fastapi import FastAPI
-from apis.api_docs.router import APIDocs
-from apis.api_health.router import router as router_health
-from apis.game.router import router as router_game
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from apis.api_health.router import router as router_health
+from apis.game.router import router as router_game
+from apis.api_docs.router import APIDocs
 
 # Fast API
 app = FastAPI(
