@@ -71,7 +71,7 @@ async def websocket_endpoint(websocket: WebSocket, game_id: str):
         game = await get_game(redis, game_id)   
         if game is not None:
             await websocket.send_text(game.board.fen())
-        #await asyncio.sleep(1)
+        await asyncio.sleep(100)
 
 async def get_redis():
     return redis_pool
