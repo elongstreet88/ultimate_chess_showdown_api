@@ -15,17 +15,17 @@ controller = GameController()
 async def get_live_game_updates(websocket: WebSocket, game_id: str):
     await controller.get_live_game_updates(game_id, websocket)
 
-@router.post("/start_game")
+@router.post("/start_game", response_model=Game)
 async def start_game():
-    game = await controller.create_game()
-    return game
+    result = await controller.create_game()
+    return result
 
-@router.post("/{game_id}/action")
-async def game_action(game_id: str, action: ChessAction):
+@router.post("/{game_id}/action", response_model=Game)
+async def execute_game_action(game_id: str, action: ChessAction):
     result = await controller.execute_action(game_id, action)
     return result
 
-@router.get("/{game_id}")
+@router.get("/{game_id}", response_model=Game)
 async def get_game(game_id: str):
     result = await controller.get_game(game_id)
     if result is None:
