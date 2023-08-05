@@ -67,6 +67,29 @@ var $fen = $('#fen');
 var $pgn = $('#pgn');
 var gameId = null;
 
+function startWebSocket(gameId) {
+    ws = new WebSocket(`ws://${window.location.host}/api/v1/game/ws/${gameId}`);
+
+    ws.onmessage = (event) => {
+        const receivedFen = event.data;
+        if (game.fen() !== receivedFen) {
+            game.load(receivedFen);
+            board.position(receivedFen, false);
+            updateStatus();
+        }
+    };
+
+    ws.onerror = (error) => {
+        console.error(`WebSocket Error: ${error}`);
+    };
+
+    ws.onclose = () => {
+        console.log('WebSocket closed. Attempting to reconnect...');
+        setTimeout(() => startWebSocket(gameId), 1000);
+    };
+}
+
+
 async function startGame() {
     const response = await fetch('/api/v1/game/start_game', {
         method: 'POST',
@@ -248,8 +271,9 @@ function getGamePosition() {
         location.hash = `#${gameId}`;
     } else {
         await loadPosition(gameId);
-        setInterval(getGamePosition, 1000);
     }
+
+    startWebSocket(gameId);  // Start the WebSocket connection
 
     updateStatus();
 })();

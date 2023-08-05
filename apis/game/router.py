@@ -1,13 +1,11 @@
 import asyncio
-from fastapi import APIRouter, HTTPException, Response, WebSocket
-from pydantic import BaseModel
-from typing import Optional
-from enum import Enum
+from fastapi import APIRouter, HTTPException, WebSocket
 import chess
 import uuid
-from redis import asyncio as aioredis
+from redis import Redis, asyncio as aioredis
 import json
 from starlette.responses import StreamingResponse
+from apis.game.models import ActionType, ChessAction, Game
 from tools.config.app_settings import app_settings
 
 # Router
@@ -17,46 +15,20 @@ router = APIRouter(
 )
 
 # Redis Connection Pool from url
-redis_pool = aioredis.from_url(app_settings.redis_url)
+redis:Redis = aioredis.from_url(app_settings.redis_url)
 
 # Websocket connections
-connected_clients = set()
+active_websockets:dict[str, list[WebSocket]] = {}
 
-class ActionType(str, Enum):
-    MOVE = "MOVE"
-    OFFER_DRAW = "OFFER_DRAW"
-    ACCEPT_DRAW = "ACCEPT_DRAW"
-    RESIGN = "RESIGN"
-
-class ChessAction(BaseModel):
-    action_type: ActionType
-    move: Optional[str]
-
-class Game:
-    def __init__(self):
-        self.board = chess.Board()
-
-async def broadcast_message(message: str):
-    for client in connected_clients:
-        await client.send_text(message)
-
-@router.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    redis = await get_redis()
-    while True:
-        game_id = await websocket.receive_text()
-        game = await get_game(redis, game_id)
-        if game is not None:
-            await websocket.send_text(game.board.fen())
-        await asyncio.sleep(0)
+async def broadcast_message(message: str, game_id:str):
+    for websocket in active_websockets.get(game_id, []):
+        await websocket.send_text(message)
 
 @router.get("/sse/{game_id}")
 async def sse_endpoint(game_id: str):
     async def async_stream_game_state():
-        redis = await get_redis()
         while True:
-            game = await get_game(redis, game_id)
+            game = await get_game(game_id)
             if game is not None:
                 yield f"data: {game.board.fen()}\n\n"
             await asyncio.sleep(1)  # Add this line if you want to send updates at intervals
@@ -66,21 +38,30 @@ async def sse_endpoint(game_id: str):
 @router.websocket("/ws/{game_id}")
 async def websocket_endpoint(websocket: WebSocket, game_id: str):
     await websocket.accept()
-    redis = await get_redis()
-    while True:
-        game = await get_game(redis, game_id)   
-        if game is not None:
-            await websocket.send_text(game.board.fen())
-        await asyncio.sleep(100)
 
-async def get_redis():
-    return redis_pool
+    # Store the websocket connection
+    if game_id not in active_websockets:
+        active_websockets[game_id] = []
+    active_websockets[game_id].append(websocket)
 
-async def set_game(redis, game_id, game):
+    try:
+        while True:
+            # Instead of polling the database, just wait for messages or a disconnect from the client.
+            data = await websocket.receive_text()
+            # Handle this data if needed (like if the client sends any message)
+            # For instance, if the client sends a "ping", you can reply with a "pong".
+            if data == "ping":
+                await websocket.send_text("pong")
+    except:
+        # On disconnect, remove the websocket from active_websockets
+        if game_id in active_websockets:
+            active_websockets[game_id].remove(websocket)
+
+async def set_game(game_id, game):
     key = f"game:{game_id}"
     await redis.set(key, json.dumps({"fen": game.board.fen()}))
 
-async def get_game(redis, game_id):
+async def get_game(game_id):
     key = f"game:{game_id}"
     game_data = await redis.get(key)
     if game_data is None:
@@ -90,7 +71,7 @@ async def get_game(redis, game_id):
     game.board.set_fen(game_data["fen"])
     return game
 
-async def delete_game(redis, game_id):
+async def delete_game(game_id):
     key = f"game:{game_id}"
     await redis.delete(key)
 
@@ -98,18 +79,14 @@ async def delete_game(redis, game_id):
 async def start_game():
     game_id = str(uuid.uuid4())
     game = Game()
-    redis = await get_redis()
-    await set_game(redis, game_id, game)
-    await redis.close()
+    await set_game(game_id, game)
     return {"game_id": game_id}
 
 @router.post("/{game_id}/action")
 async def game_action(game_id: str, action: ChessAction):
-    redis = await get_redis()
-    game = await get_game(redis, game_id)
+    game = await get_game(game_id)
 
     if game is None:
-        await redis.close()
         raise HTTPException(status_code=404, detail="Game not found")
 
     if action.action_type == ActionType.MOVE:
@@ -123,7 +100,7 @@ async def game_action(game_id: str, action: ChessAction):
 
     elif action.action_type == ActionType.RESIGN:
         # Implement resignation logic here
-        await delete_game(redis, game_id)
+        await delete_game(game_id)
 
     elif action.action_type == ActionType.OFFER_DRAW:
         # Implement draw offer logic here
@@ -133,8 +110,8 @@ async def game_action(game_id: str, action: ChessAction):
         # Implement draw acceptance logic here
         pass
 
-    await set_game(redis, game_id, game)
-    await broadcast_message(game.board.fen())
+    await set_game(game_id, game)
+    await broadcast_message(game.board.fen(), game_id)
 
     # Evaluate the position using python-chess
     evaluation = game.board.piece_map()
@@ -146,19 +123,17 @@ async def game_action(game_id: str, action: ChessAction):
     # Calculate the evaluation score
     score = material_white - material_black
 
-    await redis.close()
-
-    return {"board": str(game.board), "fen": game.board.fen(), "evaluation": score}
+    return {
+        "board": str(game.board), 
+        "fen": game.board.fen(), 
+        "evaluation": score
+    }
 
 @router.get("/{game_id}")
 async def get_game_position(game_id: str):
-    redis = await get_redis()
-    game = await get_game(redis, game_id)
+    game = await get_game(game_id)
     if game is None:
-        await redis.close()
         raise HTTPException(status_code=404, detail="Game not found")
-
-    await redis.close()
-
+    
     return {"position": game.board.fen()}
 
