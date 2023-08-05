@@ -99,7 +99,7 @@ async function startGame() {
         }
     });
     const data = await response.json();
-    gameId = data.game_id;
+    gameId = data.id;
 }
 
 async function sendMove(move) {
@@ -241,7 +241,7 @@ async function loadPosition(gameId) {
 
     if (response.ok) {
         const data = await response.json();
-        const { position } = data;
+        const position = data.fen;
         game.load(position);
         board.position(game.fen());
     }
@@ -251,7 +251,7 @@ function getGamePosition() {
     fetch(`/api/v1/game/${gameId}`)
         .then(response => response.json())
         .then(data => {
-            const fen = data.position;
+            const fen = data.fen;
             console.log("Received FEN:", fen);  // Add a console log here to debug
             if (game.fen() !== fen) {
                 game.load(fen);

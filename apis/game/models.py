@@ -13,6 +13,6 @@ class ChessAction(BaseModel):
     action_type: ActionType
     move: Optional[str]
 
-class Game:
-    def __init__(self):
-        self.board = chess.Board()
+class Game(BaseModel):
+    id     : str
+    fen    : str
