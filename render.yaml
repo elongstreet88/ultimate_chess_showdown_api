@@ -1,5 +1,4 @@
 services:
-  # A Docker web service
   - type: web
     name: ultimate-chess-showdown-api
     runtime: python

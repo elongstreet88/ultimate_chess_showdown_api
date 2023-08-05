@@ -68,7 +68,8 @@ var $pgn = $('#pgn');
 var gameId = null;
 
 function startWebSocket(gameId) {
-    ws = new WebSocket(`ws://${window.location.host}/api/v1/game/ws/${gameId}`);
+    let protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws = new WebSocket(`${protocol}//${window.location.host}/ws/${gameId}`);
 
     ws.onmessage = (event) => {
         const receivedFen = event.data;
