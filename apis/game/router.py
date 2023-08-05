@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from fastapi import APIRouter, HTTPException, WebSocket
 import chess
 import uuid
@@ -22,18 +23,8 @@ active_websockets:dict[str, list[WebSocket]] = {}
 
 async def broadcast_message(message: str, game_id:str):
     for websocket in active_websockets.get(game_id, []):
+        logging.info(f"Sending message [{message}] for game id [{game_id}] to websocket [{websocket.client}]")
         await websocket.send_text(message)
-
-@router.get("/sse/{game_id}")
-async def sse_endpoint(game_id: str):
-    async def async_stream_game_state():
-        while True:
-            game = await get_game(game_id)
-            if game is not None:
-                yield f"data: {game.board.fen()}\n\n"
-            await asyncio.sleep(1)  # Add this line if you want to send updates at intervals
-
-    return StreamingResponse(async_stream_game_state(), media_type="text/event-stream")
 
 @router.websocket("/ws/{game_id}")
 async def websocket_endpoint(websocket: WebSocket, game_id: str):
