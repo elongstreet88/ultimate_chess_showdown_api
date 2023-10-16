@@ -52,43 +52,28 @@ class AuthController:
         request_url = str(request.url)
         flow = self._create_flow(request)
         flow.fetch_token(authorization_response=request_url)
-
+        
         session = flow.authorized_session()
         user_info = session.get("https://www.googleapis.com/oauth2/v3/userinfo").json()
 
-        email = user_info["email"]
+        user = User(
+            username=user_info["email"],
+            email=user_info["email"],
+            full_name=user_info["name"],
+            last_login=datetime.utcnow()
+        )
 
-        # Check if the user already exists in Redis
-        existing_user = await self.users_controller.get_item(email)
-        if existing_user:
-            # User already exists, load their data
-            user = User(**existing_user)
+        request.session["user"] = user.model_dump(mode="json")
+        
+        # Check if user already exists in Redis
+        exists = await self.users_controller.get_item(user.username)
+        if exists:
+            await self.users_controller.update_last_login(user.username)
         else:
-            # User doesn't exist, prompt them to choose a username
-            # This part allows the user to select a username during the callback
-            selected_username = request.query_params.get("username")
-
-            if not selected_username:
-                # If the user hasn't provided a username, you can return an error or handle it as needed
-                raise HTTPException(status_code=400, detail="Username not provided")
-
-            # Create a new user with the selected username
-            user = User(
-                username=selected_username,
-                email=email,
-                full_name=user_info["name"],
-                last_login=datetime.utcnow()
-            )
-
-            # Save the user to Redis
             await self.users_controller.create(user)
 
-        # Store the user in the session
-        request.session["user"] = user.model_dump(mode="json")
-
-        # Redirect to the original URL
+        # Redirect to original URL
         return RedirectResponse(url=original_url)
-
     
     def _create_flow(self, request: Request, state=None) -> Flow:
         base_url = str(request.base_url)
