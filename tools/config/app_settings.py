@@ -2,6 +2,7 @@ import logging
 import os
 from jsonargparse import ArgumentParser, Namespace
 from tools.logs.logs import get_logger
+import uuid
 
 # Setup logger. Manually set level to info since this is our settings init
 logger = get_logger(__name__, log_level=logging.INFO)
@@ -21,12 +22,33 @@ class AppSettings():
             default='redis://localhost:6379',
             help='Redis URL'
         )
+        parser.add_argument(
+            '--google-client-id',
+            required=True,
+            type=str,
+            help='Google Client ID'
+        )
+        parser.add_argument(
+            '--google-client-secret',
+            required=True,
+            type=str,
+            help='Google Client Secret'
+        )
+        parser.add_argument(
+            '--fastapi-session-secret-key',
+            type=str,
+            required=True,
+            help='FastAPI Session Secret Key'
+        )
 
         # Parse arguments (note - we skip actual command line arguments)
         self.config:Namespace = parser.parse_args([])
 
         # Add properties to class to easily access config values
-        self.redis_url      = self.config.redis_url
+        self.redis_url                      = self.config.redis_url
+        self.google_client_id               = self.config.google_client_id
+        self.google_client_secret           = self.config.google_client_secret
+        self.fastapi_session_secret_key     = self.config.fastapi_session_secret_key
 
         # Log if requested
         if log_results:
@@ -44,7 +66,7 @@ class AppSettings():
             elif hasattr(self.config, 'args_source') and self.config.args_source:
                 source = 'ARGS'
 
-            keywords = ["password", "secret_key", "api_key", "access_token"]
+            keywords = ["password", "secret", "api_key", "access_token"]
             if value and any(keyword in attr.lower() for keyword in keywords):
                 value = '******removed*****'
 

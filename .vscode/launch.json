@@ -1,6 +1,25 @@
 {
   "version": "0.2.0",
-  "inputs": [],
+  "inputs": [
+    {
+      "id": "UCS_GOOGLE_CLIENT_ID",
+      "type": "command",
+      "command": "shellCommand.execute",
+      "args": {
+        "command": "vlt secrets get --plaintext UCS_GOOGLE_CLIENT_ID",
+        "useFirstResult": true
+      }
+    },
+    {
+      "id": "UCS_GOOGLE_CLIENT_SECRET",
+      "type": "command",
+      "command": "shellCommand.execute",
+      "args": {
+        "command": "vlt secrets get --plaintext UCS_GOOGLE_CLIENT_SECRET",
+        "useFirstResult": true
+      }
+    },
+  ],
   "configurations": [
     {
       "name": "Python: Current File",
@@ -37,11 +56,14 @@
       "preLaunchTask": "start_redis",
       "module": "app",
       "cwd": "${workspaceFolder}",
-      "args": [],
       "python": "${workspaceFolder}/venv/bin/python",
       "justMyCode": false,
       "env": {
-        "PYTHONDONTWRITEBYTECODE": "1"
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "UCS_REDIS_URL": "redis:://localhost:6379",
+        "UCS_GOOGLE_CLIENT_ID": "${input:UCS_GOOGLE_CLIENT_ID}",
+        "UCS_GOOGLE_CLIENT_SECRET": "${input:UCS_GOOGLE_CLIENT_SECRET}",
+        "UCS_FASTAPI_SESSION_SECRET_KEY": "dev-secret-key"
       }
     }
   ]

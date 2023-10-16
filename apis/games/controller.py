@@ -1,41 +1,40 @@
 import logging
-from fastapi import APIRouter, HTTPException, WebSocket
+from fastapi import HTTPException, WebSocket, status
 import chess
 import uuid
-from redis import Redis, asyncio as aioredis
 import json
-from starlette.responses import StreamingResponse
-from apis.game.models import ActionType, ChessAction, Game
+from apis.games.models import ActionType, ChessAction, Game
+from apis.users.controller import UserController
+from apis.users.models import User
 from tools.config.app_settings import app_settings
-
-# Redis Connection Pool from url
-redis:Redis = aioredis.from_url(app_settings.redis_url)
+from tools.redis.redis import redis_client
 
 # Websocket connections
 active_websockets:dict[str, list[WebSocket]] = {}
 
 class GameController:
-    async def create_game(self) -> Game:
-        game = Game(id=str(uuid.uuid4()), fen=chess.STARTING_FEN)
-        await self.set_game(game)
+    def __init__(self):
+        self.user_controller = UserController()
+        
+    async def create(self, player1:User, player2:User) -> Game:
+        game = Game(
+            id=str(uuid.uuid4()), 
+            fen=chess.STARTING_FEN, 
+            white_player_id=player1.username, 
+            black_player_id=player2.username
+        )
+        await self.__set_game(game)
         return game
 
-    async def get_game(self, game_id)->Game:
-        raw_game = await redis.hget(Game.__name__, game_id)
+    async def get(self, game_id)->Game:
+        raw_game = await redis_client.hget(Game.__name__, game_id)
         if raw_game is None:
             return None
         game = Game.parse_raw(raw_game)
         return game
-        
-    async def set_game(self, game:Game):
-        await redis.hset(Game.__name__, game.id, json.dumps(game.model_dump()))
 
-    async def delete_game(self, game_id):
-        key = f"game:{game_id}"
-        await redis.delete(key)
-
-    async def execute_action(self, game_id:str, action:ChessAction):
-        game = await self.get_game(game_id)
+    async def update(self, game_id:str, action:ChessAction):
+        game = await self.get(game_id)
 
         if game is None:
             raise HTTPException(status_code=404, detail="Game not found")
@@ -64,7 +63,7 @@ class GameController:
             # Implement draw acceptance logic here
             pass
 
-        await self.set_game(game)
+        await self.__set_game(game)
         await self.broadcast_message(game.fen, game)
 
         # Evaluate the position using python-chess
@@ -80,13 +79,14 @@ class GameController:
         return game
 
     async def get_live_game_updates(self, game_id:str, websocket:WebSocket):
+        # Ensure the game exists
+        game:Game = await self.get(game_id)
+        if game is None:
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
+            return
+        
         # Open connection
         await websocket.accept()
-
-        # Ensure the game exists
-        game:Game = await self.get_game(game_id)
-        if game is None:
-            raise HTTPException(status_code=404, detail="Game not found")
 
         # Store the websocket connection
         if game.id not in active_websockets:
@@ -96,12 +96,8 @@ class GameController:
         # Send the current game state
         try:
             while True:
-                # Instead of polling the database, just wait for messages or a disconnect from the client.
-                data = await websocket.receive_text()
-                # Handle this data if needed (like if the client sends any message)
-                # For instance, if the client sends a "ping", you can reply with a "pong".
-                if data == "ping":
-                    await websocket.send_text("pong")
+                # Wait for a message from the client
+                _ = await websocket.receive_text()
         except:
             # On disconnect, remove the websocket from active_websockets
             if game_id in active_websockets:
@@ -111,3 +107,6 @@ class GameController:
         for websocket in active_websockets.get(game.id, []):
             logging.info(f"Sending message [{message}] for game id [{game.id}] to websocket [{websocket.client}]")
             await websocket.send_text(message)
+
+    async def __set_game(self, game:Game):
+        await redis_client.hset(Game.__name__, game.id, json.dumps(game.model_dump()))

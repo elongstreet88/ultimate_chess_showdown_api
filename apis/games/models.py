@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
 from enum import Enum
-import chess
 
 class ActionType(str, Enum):
     MOVE = "MOVE"
@@ -14,5 +13,7 @@ class ChessAction(BaseModel):
     move: Optional[str]
 
 class Game(BaseModel):
-    id     : str
-    fen    : str
+    id              : str
+    fen             : str
+    white_player_id : str
+    black_player_id : str

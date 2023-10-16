@@ -1,0 +1,94 @@
+/* Reset some default styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Set a dark background color */
+body {
+    background-color: #1a1a1a;
+    font-family: Arial, sans-serif;
+    color: #fff; /* Text color */
+}
+
+/* Center the board and status container */
+.board-container,
+.status-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 100%;
+    margin: 0 auto; /* Center horizontally */
+    padding: 20px;
+    background-color: #292929; /* Dark background color */
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Darker box shadow */
+    margin-top: 20px;
+}
+
+/* Style labels */
+.status-container > label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+/* Style status, fen, and pgn displays */
+.status-container > div {
+    background-color: #1e1e1e; /* Darker background color */
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #333; /* Darker border */
+}
+
+/* Style player info */
+.players-container {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.player-info {
+    text-align: center;
+    padding: 10px;
+    background-color: #292929; /* Dark background color */
+    border-radius: 5px;
+    border: 1px solid #333; /* Darker border */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5); /* Darker box shadow */
+}
+
+/* Set a maximum width for the board */
+#myBoard {
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Style player names */
+.player-info > label {
+    font-weight: bold;
+}
+
+/* Add some spacing between the board and player info */
+.players-container {
+    margin-top: 20px;
+}
+
+/* Responsive styling for small screens */
+@media (max-width: 600px) {
+    .board-container {
+        padding: 10px;
+    }
+
+    .status-container {
+        margin-top: 10px;
+    }
+
+    .players-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .player-info {
+        margin-top: 10px;
+    }
+}
