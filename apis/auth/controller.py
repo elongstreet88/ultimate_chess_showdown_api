@@ -38,7 +38,6 @@ class AuthController:
     def ensure_authenticated_ws(self, websocket: WebSocket) -> User:
         user = websocket.session.get("user")
         if not user:
-            # handle unauthenticated websocket connection
             websocket.close(code=status.WS_1008_POLICY_VIOLATION)
             return None
         return User(**user)

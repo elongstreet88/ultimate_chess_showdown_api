@@ -17,6 +17,9 @@ class GameController:
         self.user_controller = UserController()
         
     async def create(self, player1:User, player2:User) -> Game:
+        # randomize who is white and who is black
+        if bool(uuid.uuid4().int & 1):
+            player1, player2 = player2, player1
         game = Game(
             id=str(uuid.uuid4()), 
             fen=chess.STARTING_FEN, 
@@ -33,11 +36,19 @@ class GameController:
         game = Game.parse_raw(raw_game)
         return game
 
-    async def update(self, game_id:str, action:ChessAction):
+    async def update(self, game_id:str, action:ChessAction, user:User):
         game = await self.get(game_id)
 
         if game is None:
             raise HTTPException(status_code=404, detail="Game not found")
+        
+        # Ensure the user is a player in the game
+        if user.username not in [game.white_player_id, game.black_player_id]:
+            raise HTTPException(status_code=403, detail="User is not a player in this game")
+        
+        # Ensure it is the user's turn
+        if (user.username == game.white_player_id and not game.is_white_turn) or (user.username == game.black_player_id and game.is_white_turn):
+            raise HTTPException(status_code=403, detail="It is not your turn")
 
         if action.action_type == ActionType.MOVE:
             if action.move is None:
@@ -48,6 +59,7 @@ class GameController:
                 board = chess.Board(game.fen)
                 board.push_san(action.move)
                 game.fen = board.fen()
+                game.is_white_turn = not game.is_white_turn
             except ValueError:
                 raise HTTPException(status_code=400, detail="Invalid move")
 
@@ -107,6 +119,15 @@ class GameController:
         for websocket in active_websockets.get(game.id, []):
             logging.info(f"Sending message [{message}] for game id [{game.id}] to websocket [{websocket.client}]")
             await websocket.send_text(message)
+
+    async def get_all_games(self) -> list[Game]:
+        raw_games = await redis_client.hgetall(Game.__name__)
+        games = [Game.parse_raw(raw_game) for raw_game in raw_games.values()]
+        return games
+            
+    async def get_all_active_games_by_user(self, username:str) -> list[Game]:
+        games = await self.get_all_games()
+        return [game for game in games if game.white_player_id == username or game.black_player_id == username]
 
     async def __set_game(self, game:Game):
         await redis_client.hset(Game.__name__, game.id, json.dumps(game.model_dump()))

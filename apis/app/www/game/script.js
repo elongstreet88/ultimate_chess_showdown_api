@@ -146,6 +146,20 @@ function setPlayerNames(whiteName, blackName) {
     blackPlayerNameElement.textContent = blackName;
 }
 
+async function getCurrentUser() {
+    try {
+        const response = await fetch('/api/v1/user');
+        if (!response.ok) throw new Error('Failed to fetch user data');
+
+        const data = await response.json();
+        return data.username;
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
+}
+
+
 (async function init() {
     gameId = location.hash.substr(1);
     let initialPosition = 'start';
@@ -161,6 +175,14 @@ function setPlayerNames(whiteName, blackName) {
         setPlayerNames(gameData.white_player_id, gameData.black_player_id); // Set player names
     }
 
+    // Determine board orientation based on current user's playing color
+    const currentUser = await getCurrentUser();
+    if (gameData.white_player_id === currentUser) {
+        config.orientation = 'white';
+    } else if (gameData.black_player_id === currentUser) {
+        config.orientation = 'black';
+    }
+
     game.load(gameData.fen);
     config.position = gameData.fen;
     board = Chessboard('myBoard', config);
@@ -168,3 +190,4 @@ function setPlayerNames(whiteName, blackName) {
     startWebSocket(gameId);
     updateStatus();
 })();
+

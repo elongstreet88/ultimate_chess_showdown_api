@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0-web/css/solid/fa-chess.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <title>Game List - Ultimate Chess Showdown</title>
+</head>
+
+<body onload="fetchGames()">
+    <div class="header">
+        <div>
+            <a href="/"><i class="fas fa-chess-king"></i> Ultimate Chess Showdown</a>
+        </div>
+        <div>
+            <a href="/login">Login</a>
+            <a href="/signup">Signup</a>
+        </div>
+    </div>
+    <div class="main-content">
+        <h1>Game List</h1>
+        <ul id="game-list"></ul>
+    </div>
+    <div class="footer">
+        <p>&copy; 2023 Ultimate Chess Showdown</p>
+    </div>
+    <script src="./script.js"></script>
+</body>
+
+</html>

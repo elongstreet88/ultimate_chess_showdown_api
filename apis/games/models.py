@@ -17,3 +17,4 @@ class Game(BaseModel):
     fen             : str
     white_player_id : str
     black_player_id : str
+    is_white_turn   : bool = True

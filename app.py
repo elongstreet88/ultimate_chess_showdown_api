@@ -8,6 +8,7 @@ from apis.api_health.router import router as health_router
 from apis.auth.controller import AuthController, NotAuthenticatedException
 from apis.games.router import router as games_router
 from apis.users.router import router as users_router
+from apis.user.router import router as user_router
 from apis.auth.router import router as router_auth
 from apis.app.router import router as router_app
 from apis.game_live_updates.router import router as router_game_live_updates
@@ -32,7 +33,8 @@ routers = [
     APIDocs(app),
     health_router, 
     games_router, 
-    users_router
+    users_router,
+    user_router
 ]
 for router in routers:
     app.include_router(router, prefix="/api/v1", include_in_schema=True, dependencies=[Depends(auth)])
