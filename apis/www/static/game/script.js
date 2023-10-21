@@ -7,9 +7,15 @@ let gameData = null; // Global declaration
 let currentUser = null; // Global declaration
 
 const boardElement = document.getElementById('myBoard');
+
 boardElement.addEventListener('contextmenu', function(e) {
     e.preventDefault();
 });
+
+boardElement.addEventListener('touchstart', function(e) {
+    e.preventDefault();
+}, { passive: false });  // the `{ passive: false }` is important here for this to work.
+
 
 function startWebSocket(gameId) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
