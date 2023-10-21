@@ -10,7 +10,8 @@ from apis.games.router import router as games_router
 from apis.users.router import router as users_router
 from apis.user.router import router as user_router
 from apis.auth.router import router as router_auth
-from apis.app.router import router as router_app
+from apis.www.router import router as router_app
+from apis.root.router import router as router_root
 from apis.game_live_updates.router import router as router_game_live_updates
 from apis.api_docs.router import APIDocs
 from tools.config.app_settings import app_settings
@@ -52,13 +53,8 @@ app.include_router(router_auth, prefix="", include_in_schema=True)
 # Mount the app router
 app.include_router(router_app, prefix="", include_in_schema=False, dependencies=[Depends(auth)])
 
-@app.get("/")
-async def root():
-    """
-    Redirects to /app/
-    """
-    
-    return RedirectResponse(url="/app/")
+# Mount the root router
+app.include_router(router_root, prefix="", include_in_schema=False)
 
 @app.exception_handler(NotAuthenticatedException)
 async def not_authenticated_exception_handler(request: Request, exc: NotAuthenticatedException):

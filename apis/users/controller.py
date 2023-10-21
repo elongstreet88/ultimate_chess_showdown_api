@@ -17,9 +17,12 @@ class UserController:
         user_data = User.parse_raw(user_str.decode())
         return user_data
     
-    async def get_items(self) -> list[User]:
-        users = await redis_client.hgetall(self.USERS_KEY)
-        return [User.parse_raw(user.decode()) for user in users.values()]
+    async def get_users(self, exclude_user:User) -> list[User]:
+        raw_users = await redis_client.hgetall(self.USERS_KEY)
+        users = [User.parse_raw(user.decode()) for user in raw_users.values()]
+        if exclude_user:
+            users = [user for user in users if user.username != exclude_user.username]
+        return users
 
     async def update_last_login(self, username: str) -> None:
         user = await self.get_item(username)
@@ -29,8 +32,8 @@ class UserController:
 
     async def seed(self) -> None:
         bots = [
-            User(username="bot1", email="bot1@chess.com", full_name="Bot 1", last_login=datetime.utcnow()),
-            User(username="bot2", email="bot2@chess.com", full_name="Bot 2", last_login=datetime.utcnow()),
+            User(username="bot1", email="bot1@ultimatecs.onrender.com", full_name="Bot 1", last_login=datetime.utcnow()),
+            User(username="bot2", email="bot2@ultimatecs.onrender.com", full_name="Bot 2", last_login=datetime.utcnow()),
         ]
 
         for bot in bots:
