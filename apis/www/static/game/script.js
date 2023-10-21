@@ -6,8 +6,7 @@ let gameId = null;
 let gameData = null; // Global declaration
 let currentUser = null; // Global declaration
 
-const boardElement = document.getElementById('myBoard');
-boardElement.addEventListener('contextmenu', function(e) {
+document.addEventListener('contextmenu', function(e) {
     e.preventDefault();
 });
 
