@@ -51,7 +51,7 @@ body {
 
 .player-info {
     text-align: center;
-    padding: 10px;
+    padding: 5px; /* Reduced padding for player boxes */
     background-color: #292929; /* Dark background color */
     border-radius: 5px;
     border: 1px solid #333; /* Darker border */
@@ -67,8 +67,8 @@ body {
 /* Style player names */
 .player-info > label {
     font-weight: bold;
+    font-size: 14px; /* Reduced font size for player labels */
 }
-
 /* Add some spacing between the board and player info */
 .players-container {
     margin-top: 20px;
@@ -90,7 +90,8 @@ body {
     }
 
     .player-info {
-        margin-top: 10px;
+        margin-top: 5px; /* Reduced margin between player boxes */
+        font-size: 12px; /* Reduced font size for player info on small screens */
     }
 }
 

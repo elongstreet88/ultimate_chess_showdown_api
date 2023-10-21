@@ -119,7 +119,6 @@ function updateStatus() {
 
     $status.html(status);
     $fen.html(game.fen());
-    $pgn.html(game.pgn());
 }
 
 const config = {
