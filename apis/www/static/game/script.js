@@ -16,6 +16,16 @@ function startWebSocket(gameId) {
             game.load(receivedFen);
             board.position(receivedFen, false);
             updateStatus();
+
+            // Check if it's the current user's turn
+            const isCurrentUserWhite = gameData.white_player_id === currentUser;
+            const isWhiteTurn = game.turn() === 'w';
+            if ((isCurrentUserWhite && isWhiteTurn) || (!isCurrentUserWhite && !isWhiteTurn)) {
+                // If it is, make the mobile phone buzz
+                if ("vibrate" in navigator) {
+                    navigator.vibrate(200); // vibrate for 200ms
+                }
+            }
         }
     };
 
