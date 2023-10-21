@@ -1,4 +1,5 @@
 import logging
+import random
 from fastapi import HTTPException, WebSocket, status
 import chess
 import uuid
@@ -35,6 +36,12 @@ class GameController:
             return None
         game = Game.parse_raw(raw_game)
         return game
+    
+    def bot_make_move(self, game: Game) -> str:
+        board = chess.Board(game.fen)
+        legal_moves = list(board.legal_moves)
+        move = random.choice(legal_moves)
+        return board.san(move)
 
     async def update(self, game_id:str, action:ChessAction, user:User):
         game = await self.get(game_id)
@@ -87,6 +94,15 @@ class GameController:
 
         # Calculate the evaluation score
         #score = material_white - material_black
+
+        next_player = game.white_player_id if game.is_white_turn else game.black_player_id
+        next_user:User = await self.user_controller.get_item(next_player)
+        if next_user.is_bot:
+            bot_move_san = self.bot_make_move(game)
+            bot_action = ChessAction(action_type=ActionType.MOVE, move=bot_move_san)
+            await self.update(game_id, bot_action, next_user)
+        else:
+            await self.broadcast_message(game.fen, game)
 
         return game
 

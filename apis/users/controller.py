@@ -32,8 +32,8 @@ class UserController:
 
     async def seed(self) -> None:
         bots = [
-            User(username="bot1", email="bot1@ultimatecs.onrender.com", full_name="Bot 1", last_login=datetime.utcnow()),
-            User(username="bot2", email="bot2@ultimatecs.onrender.com", full_name="Bot 2", last_login=datetime.utcnow()),
+            User(username="bot1", email="bot1@ultimatecs.onrender.com", full_name="Bot 1", last_login=datetime.utcnow(), is_bot=True),
+            User(username="bot2", email="bot2@ultimatecs.onrender.com", full_name="Bot 2", last_login=datetime.utcnow(), is_bot=True),
         ]
 
         for bot in bots:
