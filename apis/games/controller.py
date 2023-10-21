@@ -17,17 +17,25 @@ class GameController:
     def __init__(self):
         self.user_controller = UserController()
         
-    async def create(self, player1:User, player2:User) -> Game:
+    async def create(self, player1: User, player2: User) -> Game:
         # randomize who is white and who is black
         if bool(uuid.uuid4().int & 1):
             player1, player2 = player2, player1
+
         game = Game(
-            id=str(uuid.uuid4()), 
-            fen=chess.STARTING_FEN, 
-            white_player_id=player1.username, 
+            id=str(uuid.uuid4()),
+            fen=chess.STARTING_FEN,
+            white_player_id=player1.username,
             black_player_id=player2.username
         )
         await self.__set_game(game)
+
+        # Check if white player is a bot and make a move if it is
+        if player1.is_bot:
+            bot_move_san = self.bot_make_move(game)
+            bot_action = ChessAction(action_type=ActionType.MOVE, move=bot_move_san)
+            await self.update(game.id, bot_action, player1)
+
         return game
 
     async def get(self, game_id)->Game:
