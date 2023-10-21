@@ -3,6 +3,8 @@ const $status = $('#status');
 const $fen = $('#fen');
 const $pgn = $('#pgn');
 let gameId = null;
+let gameData = null; // Global declaration
+let currentUser = null; // Global declaration
 
 function startWebSocket(gameId) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -49,9 +51,11 @@ async function sendMove(move) {
 }
 
 function onDragStart(source, piece) {
-    if (game.game_over() || 
-        (game.turn() === 'w' && piece.startsWith('b')) || 
-        (game.turn() === 'b' && piece.startsWith('w'))) {
+    // Assuming you've fetched the current user outside the function and stored it in a variable named "currentUser"
+    if ((game.turn() === 'w' && piece.startsWith('b')) || 
+        (game.turn() === 'b' && piece.startsWith('w')) ||
+        (game.turn() === 'w' && gameData.black_player_id === currentUser) ||
+        (game.turn() === 'b' && gameData.white_player_id === currentUser)) {
         return false;
     }
 
@@ -73,6 +77,7 @@ function onDragStart(source, piece) {
         squareEl.append(dot);
     });
 }
+
 
 async function onDrop(source, target) {
     $('#myBoard .square-55d63').css('background', '');
@@ -163,7 +168,6 @@ async function getCurrentUser() {
 (async function init() {
     gameId = location.hash.substr(1);
     let initialPosition = 'start';
-    var gameData = null;
 
     if (!gameId) {
         const response = await startGame();
@@ -175,12 +179,15 @@ async function getCurrentUser() {
         setPlayerNames(gameData.white_player_id, gameData.black_player_id); // Set player names
     }
 
-    // Determine board orientation based on current user's playing color
-    const currentUser = await getCurrentUser();
+    // Fetch the current user's username
+    currentUser = await getCurrentUser();
+
     if (gameData.white_player_id === currentUser) {
         config.orientation = 'white';
     } else if (gameData.black_player_id === currentUser) {
         config.orientation = 'black';
+    } else { // If the currentUser is neither the white nor black player, then they are viewing only.
+        config.draggable = false; // Disable piece dragging.
     }
 
     game.load(gameData.fen);
@@ -190,4 +197,3 @@ async function getCurrentUser() {
     startWebSocket(gameId);
     updateStatus();
 })();
-
