@@ -62,19 +62,26 @@ function onDragStart(source, piece) {
     const moves = game.moves({ square: source, verbose: true });
     $('#myBoard .square-55d63').css('background', '');
 
+    // Clear existing blue dots first
+    $('.blue-dot').remove();
+
     moves.forEach(move => {
         const squareEl = $('#myBoard .square-' + move.to);
-        const dot = $('<div>').css({
-            width: '10px',
-            height: '10px',
-            backgroundColor: 'blue',
-            borderRadius: '50%',
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)'
-        }).addClass('blue-dot');
-        squareEl.append(dot);
+        if (!squareEl.find('.blue-dot').length) {  // only append if there's no existing dot
+            const dot = $('<div>').css({
+                width: '10px',
+                height: '10px',
+                backgroundColor: 'blue',
+                borderRadius: '50%',
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                opacity: 0  // initially set opacity to 0
+            }).addClass('blue-dot');
+            squareEl.append(dot);
+            setTimeout(() => dot.css('opacity', 1), 0);  // fades the dot in
+        }
     });
 }
 

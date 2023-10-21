@@ -10,6 +10,7 @@ body {
     background-color: #1a1a1a;
     font-family: Arial, sans-serif;
     color: #fff; /* Text color */
+    overflow: hidden;
 }
 
 /* Center the board and status container */
@@ -91,4 +92,9 @@ body {
     .player-info {
         margin-top: 10px;
     }
+}
+
+
+.blue-dot {
+    transition: opacity 0.3s ease;
 }
