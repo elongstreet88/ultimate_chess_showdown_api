@@ -6,6 +6,11 @@ let gameId = null;
 let gameData = null; // Global declaration
 let currentUser = null; // Global declaration
 
+const boardElement = document.getElementById('myBoard');
+boardElement.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+});
+
 function startWebSocket(gameId) {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const ws = new WebSocket(`${protocol}//${window.location.host}/api/v1/game_live_updates/${gameId}`);
