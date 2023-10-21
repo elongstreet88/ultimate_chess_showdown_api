@@ -1,3 +1,3 @@
 # Ultimate Chess Showdown
 
-An experiment in chess engines
+An experiment in chess games
