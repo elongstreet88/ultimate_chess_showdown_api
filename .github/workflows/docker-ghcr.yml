@@ -1,0 +1,50 @@
+name: Build and Publish Docker Image to GHCR
+
+on:
+  push:
+    branches: [main, new_cache_style]
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '**/*.md'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.gitignore'
+
+jobs:
+  build-and-push:
+    runs-on: arc-runner-set
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set environment variables
+        id: vars
+        run: |
+          echo "REPO=ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}" >> $GITHUB_ENV
+          echo "COMMIT_SHA=$(echo $GITHUB_SHA | cut -c1-7)" >> $GITHUB_ENV
+          echo "TIMESTAMP=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_ENV
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image with cache
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: |
+            ${{ env.REPO }}:latest
+            ${{ env.REPO }}:${{ env.COMMIT_SHA }}
+            ${{ env.REPO }}:${{ env.TIMESTAMP }}
+          cache-from: type=registry,ref=${{ env.REPO }}:buildcache
+          cache-to: type=registry,ref=${{ env.REPO }}:buildcache,mode=max
