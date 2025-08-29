@@ -161,3 +161,4 @@ cython_debug/
 
 .space
 .vercel
+.infisical.json
