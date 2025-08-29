@@ -1,0 +1,32 @@
+# Ignore common development and build artifacts
+node_modules/
+.git/
+.gitignore
+dist/
+build/
+coverage/
+
+# Ignore log files
+*.log
+
+# Ignore environment files
+.env
+.env.*
+
+# Ignore Docker-related files themselves
+Dockerfile*
+.dockerignore
+
+# Ignore specific sensitive files if present
+secrets.txt
+
+# Exclude everything in the 'temp' directory but re-include a specific file
+temp/
+!temp/important.txt
+
+# Exclude all markdown files except for README.md
+*.md
+!README.md
+
+venv
+./venv
