@@ -8,6 +8,9 @@
       "module": "app",
       "cwd": "${workspaceFolder}",
       "justMyCode": false,
+      "env": {
+        "UCS_REDIS_URL": "redis://localhost:6379/0",
+      },
       "envFile": "${workspaceFolder}/.env",
     },
     {
